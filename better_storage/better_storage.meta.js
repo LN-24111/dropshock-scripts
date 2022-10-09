@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         DS Better Storage
+// @name         DS - Better Storage
 // @namespace    http://tampermonkey.net/
 // @version      1.0
 // @description  try to take over the world!
