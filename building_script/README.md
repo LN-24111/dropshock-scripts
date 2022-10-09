@@ -13,14 +13,16 @@ List of buttons:
 * Toggle - Toggles one-click build mode (DS settings) without needing to go to settings
 
 Query format:
-"""
 {
 	"Unit/mod/building name": quantity,
 	...
 }
-"""
 
 Common acronyms for common units are included.
+
+Example:
+{"Wyvern": 40}
+
 The unit itself is not built. This is due to variant selection / oversight being a major concern.
 
 
