@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DS - Building Script
 // @namespace    http://tampermonkey.net/
-// @version      2.0
+// @version      2.1
 // @description  try to take over the world!
 // @author       XHunter
 // @updateURL    https://raw.githubusercontent.com/LN-24111/dropshock-scripts/main/building_script/building_script.meta.js
@@ -9,7 +9,7 @@
 // @match        *://command.drop-shock.com/construct.php*
 // @match        *://command.drop-shock.com/index_build.html*
 // @require      https://code.jquery.com/jquery-3.4.1.min.js
-// @grant        null
+// @grant        none
 // ==/UserScript==
 const AUTO_BUILD_ON_QUEUE = true
 
