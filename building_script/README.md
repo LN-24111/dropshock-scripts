@@ -18,6 +18,7 @@ Query format:
 	...
 }
 
+
 Common acronyms for common units are included.
 
 Example:
@@ -25,6 +26,9 @@ Example:
 
 The unit itself is not built. This is due to variant selection / oversight being a major concern.
 
+Example gif (query: {"Kat": 8} ):
+
+![Alt Text](https://github.com/LN-24111/dropshock-scripts/blob/main/building_script/tutorial.gif)
 
 Advanced:
 * To add a new acronym, add to the script's ACRONYMS const
