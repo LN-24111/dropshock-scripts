@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DS - Better Refit
 // @namespace    http://tampermonkey.net/
-// @version      2.0
+// @version      2.1
 // @description  try to take over the world!
 // @author       XHunter
 // @updateURL    https://raw.githubusercontent.com/LN-24111/dropshock-scripts/main/quick_mod/quick_mod.meta.js
@@ -161,7 +161,6 @@ const UTILITY_COMMON = [
 	122,	// Dark Shadow Cloak Generator
 	137,	// Illuminator Anti-Cloak
 	178,	// Tremor Sensors
-	138,	// Deep View Module
 	74,		// Improved Mining Platform
 	75,		// Advanced Mining Platform
 	78,		// Mining Surveyor Acti
@@ -182,6 +181,7 @@ const UNIQUE = [
 	120,	// Tears of the Sha'Kahr
 	104,	// Bandit's Eye
 	73,		// Mobile Uplink
+	138,	// Deep View Module
 	105,	// Sabot Launcher
 	109,	// EMP Cannon
 	115,	// Rail Cannon
