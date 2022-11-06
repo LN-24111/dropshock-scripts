@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DS - Building Script
 // @namespace    http://tampermonkey.net/
-// @version      2.1
+// @version      2.2
 // @description  try to take over the world!
 // @author       XHunter
 // @updateURL    https://raw.githubusercontent.com/LN-24111/dropshock-scripts/main/building_script/building_script.meta.js
@@ -13,10 +13,11 @@
 // ==/UserScript==
 const AUTO_BUILD_ON_QUEUE = true
 
+
 // Delay before confirm. This takes advantage of how lax the server requirement is. And message delays.
 // Lower value may break script until I implement a better version
 // Higher value makes things slower
-const CONFIRM_DELAY = 1500
+const CONFIRM_DELAY = 1750
 
 const ACRONYMS = {
     //Mekas
@@ -698,11 +699,13 @@ function getBuildList(order){
         return buildList
     }
     else {
-        for (var child of children["requires"]){
-            //Get child list
-            var childList = getBuildList([child, order[1]])
-            //Append
-            buildList = aggregate(buildList, childList)
+        if (order[0] in MECH || ONE_CLICK == false){
+            for (var child of children["requires"]){
+                //Get child list
+                var childList = getBuildList([child, order[1]])
+                //Append
+                buildList = aggregate(buildList, childList)
+            }
         }
     }
     return buildList
@@ -911,12 +914,23 @@ $(this).ready(function(){
     finishedbuildstatus = function(){}
 })
 
+// One-click, use with caution (fundamentally buggy)
+var ONE_CLICK = (()=>{
+    let oc = localStorage.getItem('one_click')
+    if (oc == undefined){
+        localStorage.setItem('one_click', false)
+        return false
+    }
+    return JSON.parse(oc)
+})()
+
 /*============================================== GUI stuff ==============================================*/
 /* Toggle Button */
-var toggleBtn = $($.parseHTML('<button id="toggle_con_mode" type="button" style="display: block; position: absolute;top: -20px;left: 40px;">Toggle</button>'))
-var autoBtn = $($.parseHTML('<button id="toggle_auto_mode" type="button" style="display: block; position: absolute;top: -40px;left: 40px;">Manual</button>'))
-var queryBtn = $($.parseHTML('<button id="insert_query" type="button" style="display: block; position: absolute;top: -60px;left: 40px;">Query</button>'))
-var clearBtn = $($.parseHTML('<button id="clear" type="button" style="display: block; position: absolute;top: -80px;left: 40px;">Clear</button>'))
+var toggleBtn = $($.parseHTML('<button id="toggle_con_mode" type="button" style="display: block; width: 110px; position: absolute;top: -20px;left: 20px;">Toggle</button>'))
+var autoBtn = $($.parseHTML('<button id="toggle_auto_mode" type="button" style="display: block; width: 110px; position: absolute;top: -40px;left: 20px;">Manual</button>'))
+var queryBtn = $($.parseHTML('<button id="insert_query" type="button" style="display: block; width: 110px; position: absolute;top: -60px;left: 20px;">Query</button>'))
+var clearBtn = $($.parseHTML('<button id="clear" type="button" style="display: block; width: 110px; position: absolute;top: -80px;left: 20px;">Clear</button>'))
+var ocToggleBtn = $($.parseHTML(`<button id="toggle_build_mode" type="button" style="display: block; width: 110px; position: absolute;top: -100px;left: 20px;">${ONE_CLICK?'One-click mode':'Classic mode'}</button>`))
 var iframe = $($.parseHTML('<iframe style="visibility: hidden;" src="account.php" height="0" width="0"></iframe>'))
 
 toggleBtn.click(function(){
@@ -938,11 +952,18 @@ clearBtn.click(function(){
     buildQueue.clear()
 })
 
+ocToggleBtn.click(function(){
+    ONE_CLICK = !ONE_CLICK
+    $(this).text(ONE_CLICK?'One-click mode':'Classic mode')
+    localStorage.setItem('one_click', ONE_CLICK)
+})
+
 var loaded = false
 iframe.on('load', function(){
     if (loaded)
         top.frames['content'].location = 'construct.php'
     else{
+        $('#container3bgDIV').prepend(ocToggleBtn)
         $('#container3bgDIV').prepend(clearBtn)
         $('#container3bgDIV').prepend(queryBtn)
         $('#container3bgDIV').prepend(autoBtn)
