@@ -1,3 +1,6 @@
+CHANGELOG:
+2.2: One-click support added as a toggle (WARN: FUNDAMENTALLY BUGGY DUE TO HOW FRIZZ CODED THE FEATURE)
+
 Quick guide:
 
 Feature:
