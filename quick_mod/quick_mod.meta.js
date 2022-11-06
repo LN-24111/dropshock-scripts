@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         DS - Quick Mod
+// @name         DS - Better Refit
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      2.0
 // @description  try to take over the world!
 // @author       XHunter
 // @updateURL    https://raw.githubusercontent.com/LN-24111/dropshock-scripts/main/quick_mod/quick_mod.meta.js
