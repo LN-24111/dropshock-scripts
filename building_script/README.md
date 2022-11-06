@@ -1,5 +1,8 @@
 CHANGELOG:
-2.2: One-click support added as a toggle (WARN: FUNDAMENTALLY BUGGY DUE TO HOW FRIZZ CODED THE FEATURE)
+
+* 2.2: 
+	* One-click support added as a toggle (WARN: FUNDAMENTALLY BUGGY DUE TO HOW FRIZZ CODED THE FEATURE)
+	* Increased confirm delay (less buggy, slower construction speed)
 
 Quick guide:
 
