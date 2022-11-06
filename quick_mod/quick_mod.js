@@ -250,7 +250,7 @@ $(document).keypress(function(event){
         console.log(keycode)
 });
 
-var currOffset=341+141
+var currOffset=341+121
 var container = document.getElementById('container1DIV')
 function makeNewModBar(mods, name=undefined){
     let header = `
