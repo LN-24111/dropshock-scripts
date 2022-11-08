@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DS - Better Storage
 // @namespace    http://tampermonkey.net/
-// @version      1.1
+// @version      1.2
 // @description  try to take over the world!
 // @author       XHunter
 // @updateURL    https://raw.githubusercontent.com/LN-24111/dropshock-scripts/main/better_storage/better_storage.meta.js
