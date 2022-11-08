@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DS - Better Storage
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  try to take over the world!
 // @author       XHunter
 // @updateURL    https://raw.githubusercontent.com/LN-24111/dropshock-scripts/main/better_storage/better_storage.meta.js
@@ -51,7 +51,6 @@ function addListeners(checkingGroup){
         event.stopPropagation()
         var cb = $(this).find('input.twCB[type=checkbox]')
         if (CBshown && cb.length == 1 && mouseDown){
-            console.log(cb)
             cb.click()
         }
     })
@@ -70,7 +69,7 @@ function addListeners(checkingGroup){
         }
     })
 
-    cbs.click(function(event){
+    cbs.change(function(event){
         event.stopPropagation()
         var parent = $(this).parent().parent()
         parent.css('background',$(this).is(":checked") ? 'purple' : '')
@@ -122,3 +121,53 @@ function processGetGroup_2() {
 processGetGroup = processGetGroup_2
 
 addListeners()
+
+function showgroup2(mygroup) {
+    let xmlhttp = new XMLHttpRequest()
+    xmlhttp.onreadystatechange = function() {
+        if (this.readyState == 4){
+            if (this.status == 200) {
+                document.getElementById(mygroup+"exp").style.visibility="hidden";
+                document.getElementById(mygroup+"exp").style.display="none";
+                document.getElementById(mygroup+"tr").style.visibility="visible";
+                if (fx) { document.getElementById(mygroup+"tr").style.display="table-row"; }
+                else { document.getElementById(mygroup+"tr").style.display="block"; }
+                document.getElementById(mygroup).innerHTML = this.responseText;
+                addListeners(mygroup)
+                if (CBshown) { showCB(); }
+                disableLowLevelCrews(window.document.giveFORM.action === "process_scrap.php");
+            }
+        }
+    }
+    xmlhttp.open('get', `/process_get_group.php?group=${mygroup}`)
+    try{
+        xmlhttp.send()
+    }
+    catch(err){}
+}
+function expandAll(){
+    $('[id$=exp][id^=unitx]:visible').each(function(){
+        showgroup2(this.id.substring(0, this.id.length-3))
+    })
+}
+function clickDitUnits(){
+    let units = $('font:contains(Mod Slot)').prev()
+    for (let unit of units){
+        if(unit.textContent.length == 0){
+            var cb = $(unit).parent().parent().parent().parent().parent().parent().parent().find('input.twCB[type=checkbox]')
+            if (CBshown && cb.length == 1){
+                if(cb[0].checked == false)
+                    cb.click()
+            }
+        }
+    }
+}
+
+document.addEventListener('keyup', (event)=>{
+    if (event.code == 'Digit1'){
+        expandAll()
+    }
+    if (event.code == 'Digit2'){
+        clickDitUnits()
+    }
+})
