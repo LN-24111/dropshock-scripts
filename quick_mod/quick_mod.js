@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DS - Better Refit
 // @namespace    http://tampermonkey.net/
-// @version      2.2
+// @version      2.3
 // @description  try to take over the world!
 // @author       XHunter
 // @updateURL    https://raw.githubusercontent.com/LN-24111/dropshock-scripts/main/quick_mod/quick_mod.meta.js
@@ -208,13 +208,6 @@ function execute(query){
     }
 }
 
-function queueCommand_2(myActor,myAction,myTarget) {
-	myCommand = myActor + "," + myAction + "," + myTarget;
-    commandQueue[(commandQueue.length)] = myCommand
-    drawQueue();
-}
-queueCommand = queueCommand_2
-
 var hiddenCrews = []
 var display = $('[id^="crewDIV"]:not([style*="visibility:hidden"])')
 if (display.length > 0) display = display[0].style.display
@@ -322,8 +315,28 @@ drawFilter = function(){
 drawFilter()
 
 /**/
+queueCommand = function(myActor,myAction,myTarget, callback=()=>{}) {
+	let myCommand = myActor + "," + myAction + "," + myTarget;
+    commandQueue.push([myCommand, callback])
+    drawQueue();
+}
 
-sendCommand = function(myCommand) {
+runQueue = function () {
+	processQueue();
+	setTimeout("runQueue()", 200);
+}
+
+processQueue = function() {
+	if (commandQueue.length > 0) {
+        for (const [cmd, callback] of commandQueue){
+            sendCommand(cmd, callback)
+        }
+        commandQueue = Array()
+        drawQueue()
+    }
+}
+
+sendCommand = function(myCommand, callback) {
     let commandArray = myCommand.split(',');
     let param = "theactor=" + commandArray[0] +
         "&theaction=" + commandArray[1] +
@@ -367,6 +380,7 @@ sendCommand = function(myCommand) {
                         unitRepaired(parseInt(thistarget));
                     }
                 }
+                callback()
             }
         }
     }
@@ -378,16 +392,31 @@ sendCommand = function(myCommand) {
         setTimeout(()=>{sendCommand(myCommand)}, 500)
     }
 }
-runQueue = function () {
-	processQueue();
-	setTimeout("runQueue()", 200);
+
+removemod = function(myslot, callback=undefined) {
+	myunit=modbyunit[myslot];
+	removedmod = modassignment[myslot]
+	queueCommand(removedmod,'removemod',myunit+'x'+myslot, callback);
 }
-processQueue = function() {
-	if (commandQueue.length > 0) {
-        for (let cmd of commandQueue){
-            sendCommand(cmd)
+
+setmod = function(myslot,modconst) {
+	myunit = modbyunit[myslot];
+	addError = 0;
+	for (MAi=modbyunit.indexOf(myunit); MAi<=modbyunit.lastIndexOf(myunit); MAi++) { if ( (modconst == modassignment[MAi]) && (myunit == modbyunit[MAi]) && (modassignment[myslot] != modconst) && (modconst!=120) ) { addError=1; } }
+	if (typeof unitIntMods[myunit] == 'object') { for (var imyIntMods=0;imyIntMods<unitIntMods[myunit].length;imyIntMods++) { if (unitIntMods[myunit][imyIntMods]==modconst) { addError=2; } } }
+
+	if ((modconst == "none") && (modassignment[myslot] != -1)) { removemod(myslot); }
+	else if (addError==1) { layerWrite('helptext1DIV','<font class=alerttext><b>ERROR:</b></font> Unit can only mount one of each mod. ','container1DIV.document.text1DIV'); if (!multiMod) { selectedmod = "none"; } }
+	else if (addError==2) { layerWrite('helptext1DIV','<font class=alerttext><b>ERROR:</b></font> Unit can only mount one of each mod. ','container1DIV.document.text1DIV'); if (!multiMod) { selectedmod = "none"; } }
+	else if ((modconst == "none") && (modassignment[myslot] == -1)) { layerWrite('helptext1DIV','Please Select a Mod for this Unit','container1DIV.document.text1DIV') }
+	else {
+		layerWrite('helptext1DIV','','container1DIV.document.text1DIV');
+		if ( (!multiMod) && (groupLoad!=1) ) { selectedmod = "none"; }
+		if ((modconst != "none") && (modassignment[myslot] != -1)) {
+            removemod(myslot, ()=>{queueCommand(modconst,'setmod',myunit+'x'+myslot)});
         }
-        commandQueue = Array()
-        drawQueue()
-    }
+        else{
+            queueCommand(modconst,'setmod',myunit+'x'+myslot)
+        }
+	}
 }
