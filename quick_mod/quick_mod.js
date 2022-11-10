@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DS - Better Refit
 // @namespace    http://tampermonkey.net/
-// @version      2.1
+// @version      2.2
 // @description  try to take over the world!
 // @author       XHunter
 // @updateURL    https://raw.githubusercontent.com/LN-24111/dropshock-scripts/main/quick_mod/quick_mod.meta.js
@@ -279,10 +279,115 @@ function makeNewModBar(mods, name=undefined){
     }
     container.appendChild(template.content.firstChild)
 }
-makeNewModBar(TANK_COMMON)
-makeNewModBar(BALLISTIC_COMMON)
-makeNewModBar(MISSILE_COMMON)
-makeNewModBar(ENERGY_COMMON)
-makeNewModBar(UTILITY_COMMON)
-makeNewModBar(SPEED_COMMON)
-makeNewModBar(UNIQUE)
+setTimeout(()=>{
+    makeNewModBar(TANK_COMMON)
+    makeNewModBar(BALLISTIC_COMMON)
+    makeNewModBar(MISSILE_COMMON)
+    makeNewModBar(ENERGY_COMMON)
+    makeNewModBar(UTILITY_COMMON)
+    makeNewModBar(SPEED_COMMON)
+    makeNewModBar(UNIQUE)
+}, 500)
+
+/*================= Unselected All Merits ======================*/
+var panel = $('#filter1textDIV')
+panel.parent().css('height', 155)
+panel.next().css('height', 155)
+var draw_original = drawFilter
+
+drawFilter = function(){
+    draw_original()
+    var btns = $($.parseHTML('[<a href="#" class="helptextb" draggable="false">Unselect All Merits</a>] [<a href="#" class="helptextb" draggable="false">Select All Merits</a>]<br>'))
+    btns.insertAfter(panel.children().first().next())
+
+    btns.first().next().click(function(){
+        for (var i = 0; i <= 13; i++){
+            if (FilterCrews.indexOf(i) == -1) {
+                FilterCrews[(FilterCrews.length)] = i
+            }
+        }
+        applyFilter()
+        drawFilter()
+    })
+    btns.first().next().next().click(function(){
+        for (var i = 0; i <= 13; i++){
+            if (FilterCrews.indexOf(i) != -1) {
+                FilterCrews[(FilterCrews.indexOf(i))] = null
+            }
+        }
+        applyFilter()
+        drawFilter()
+    })
+}
+drawFilter()
+
+/**/
+
+sendCommand = function(myCommand) {
+    let commandArray = myCommand.split(',');
+    let param = "theactor=" + commandArray[0] +
+        "&theaction=" + commandArray[1] +
+        "&thetarget=" + commandArray[2]
+    let xmlhttp = new XMLHttpRequest()
+    xmlhttp.open('POST', 'process_get_modify.php')
+    xmlhttp.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+    xmlhttp.onreadystatechange = function() {
+        if (this.readyState == 4){
+            if (this.status == 200) {
+                let comResults = this.responseText.split('<*>');
+                comResults[0] = trim(comResults[0]);
+
+                let processedCommand = myCommand.split(',');
+                let thisactor = processedCommand[0];
+                let thisaction = processedCommand[1];
+                let thistarget = processedCommand[2];
+
+                if (thisaction=="setmod") {
+                    if (comResults[0]=="ok") { thistarget = thistarget.split('x'); setmodConfirmed(thistarget[1],thisactor); }
+                } else if (thisaction=="removemod") {
+                    if (comResults[0]=="ok") { thistarget = thistarget.split('x'); removemodConfirmed(thistarget[1]); }
+                } else if (thisaction=="setcrew") {
+                    if (comResults[0]=="ok") { setcrewConfirmed(unitids.indexOf(parseInt(thistarget)),crewids.indexOf(parseInt(thisactor))); }
+                } else if (thisaction=="removecrew") {
+                    if (comResults[0]=="ok") { removecrewConfirmed(thistarget); }
+                } else if (thisaction=="togglearmy") {
+                    if (comResults[0]=="ok") { togglearmyConfirm(parseInt(thisactor),thistarget); }
+                } else if (thisaction=="integrate") {
+                    if (comResults[0]=="integrated") { integrateUnit(parseInt(thisactor),comResults[1],comResults[2]); }
+                    else if (comResults[0]=="checkChance") { document.getElementById(`integrationChance${comResults[1]}`).innerHTML = `<span class="integrateChance" onmousemove="showtwHelp('Integrate_Chance',event);" onmouseout="hidetwHelp();">${comResults[2]}%</span><br><span class="integrateDestroy" onmousemove="showtwHelp('Tear_Loss_Chance',event);" onmouseout="hidetwHelp();">${comResults[3]}%</span>` }
+                    else if (comResults[0]=="tearlost") { removeTear(parseInt(thisactor)); }
+                    else if (thistarget == 'checkChance') { }
+                    else { checkTears(parseInt(thisactor)); }
+                } else if (thisaction=="activate") {
+                    if (comResults[0]=="ok") { activateUnit(parseInt(thisactor)); }
+                    else { checkEye(parseInt(thistarget)); }
+                } else if (thisaction=="repair") {
+                    if (comResults[0]=="ok") {
+                        parent.frames['stats'].checkNewStats();
+                        unitRepaired(parseInt(thistarget));
+                    }
+                }
+            }
+        }
+    }
+    try{
+        xmlhttp.send(param)
+    }
+    catch(err){
+        alert('err')
+        setTimeout(()=>{sendCommand(myCommand)}, 500)
+    }
+}
+runQueue = function () {
+	processQueue();
+	setTimeout("runQueue()", 200);
+}
+processQueue = function() {
+	if (commandQueue.length > 0) {
+        for (let cmd of commandQueue){
+            sendCommand(cmd)
+        }
+        commandQueue = Array()
+        drawQueue()
+    }
+}
