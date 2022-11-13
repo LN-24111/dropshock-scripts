@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DS - Building Script
 // @namespace    http://tampermonkey.net/
-// @version      2.2
+// @version      3.0
 // @description  try to take over the world!
 // @author       XHunter
 // @updateURL    https://raw.githubusercontent.com/LN-24111/dropshock-scripts/main/building_script/building_script.meta.js
