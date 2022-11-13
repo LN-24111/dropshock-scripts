@@ -1,5 +1,14 @@
 CHANGELOG:
 
+* 3.0:
+	* Released - Total overhaul of the underlying system. Now more robust and reliable
+		* Can still be brittle if you reload the page mid build
+		* Much more crash resistant
+		* Still can't handle if you decided to send/use mods midbuild... or if you open another session and mess things up, etc. That's impossible/infeasible
+	* Much better speed & smoother manual building
+	* Oversight and variant selection now supported
+		* Query is now more complex as a result. GUI would fix it, but takes time.
+
 * 2.2: 
 	* One-click support added as a toggle (WARN: FUNDAMENTALLY BUGGY DUE TO HOW FRIZZ CODED THE FEATURE)
 	* Increased confirm delay (less buggy, slower construction speed)
@@ -19,19 +28,19 @@ List of buttons:
 * Toggle - Toggles one-click build mode (DS settings) without needing to go to settings
 
 Query format:
-{
-	"Unit/mod/building name": quantity,
+[
+	["Unit", qty, "Vars", Oversight"],
+	["Mod/building", qty],
 	...
-}
+]
 
 
 Common acronyms for common units are included.
 
 Example:
-{"Wyvern": 40}
+[["Wyvern", 40, "ADMM", 100]]
 
-The unit itself is not built. This is due to variant selection / oversight being a major concern.
-
+OUTDATED:
 Example gif (query: {"Kat": 8} ):
 
 ![Alt Text](https://github.com/LN-24111/dropshock-scripts/blob/main/building_script/tutorial.gif)
@@ -42,5 +51,5 @@ Advanced:
 Version 3.0 planned features:
 * Full GUI (no more typing... well, more convenient typing)
 * View current build queue
-* Support for one-click build mode (with the caveat that this feature is horrible for managing your inventory - not related to the build script - but it's an easy implement)
-* Build units with var, oversight selection
+* ~~Support for one-click build mode (with the caveat that this feature is horrible for managing your inventory - not related to the build script - but it's an easy implement)~~
+* ~~ Build units with var, oversight selection ~~
