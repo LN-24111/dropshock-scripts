@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DS - Building Script
 // @namespace    http://tampermonkey.net/
-// @version      2.2
+// @version      3.0
 // @description  try to take over the world!
 // @author       XHunter
 // @updateURL    https://raw.githubusercontent.com/LN-24111/dropshock-scripts/main/building_script/building_script.meta.js
@@ -11,13 +11,10 @@
 // @require      https://code.jquery.com/jquery-3.4.1.min.js
 // @grant        none
 // ==/UserScript==
+
+const CONFIRM_DELAY = 1200
+const RETRY_DELAY = 200
 const AUTO_BUILD_ON_QUEUE = true
-
-
-// Delay before confirm. This takes advantage of how lax the server requirement is. And message delays.
-// Lower value may break script until I implement a better version
-// Higher value makes things slower
-const CONFIRM_DELAY = 1750
 
 const ACRONYMS = {
     //Mekas
@@ -103,6 +100,7 @@ const ACRONYMS = {
     "Pro-max": "Pro-max Armor",
     "Proton": "Proton Mass Generator",
     "Puni": "Punisher Assault Turret",
+    "Punisher": "Punisher Assault Turret",
     "Reaper": "Reaper Assault Cannon",
     "SBG": "Sanctuary Barrier Generator",
     "SW": "Shadow Whisperer",
@@ -114,7 +112,6 @@ const ACRONYMS = {
     "Vamp": "Vampire Cannon",
     "Zeus": "Zeus Missile System"
 }
-
 const MECH = {
 	'Aegis Shield Meka': {'id': 106, 'requires': ['EMP Adaptor', 'Chimera Power Converter', 'Argus Energy Adaptor']},
 	'Akimo Meka': {'id': 33, 'requires': ['Hellseeker Energy Turret']},
@@ -181,7 +178,7 @@ const MECH = {
 	'Mercat Scout Tank': {'id': 39, 'requires': []},
 	'Mini-gun Meka': {'id': 22, 'requires': ['Derringer Cannon']},
 	'Mite Meka': {'id': 55, 'requires': ['Shield Shunt']},
-	'Necromancer Meka': {'id': 83, 'requires': ['Steeltec Repair Droid', 'Mobile Uplink', 'Vampire Cannon', 'EMP Cannon']},
+	'Necromancer Meka': {'id': 83, 'requires': ['Steeltec Repair Droid', 'Wartech Salvage Droid', 'Mobile Uplink', 'Vampire Cannon', 'EMP Cannon']},
 	'Nightstalker Meka': {'id': 81, 'requires': ['Sanctuary Barrier Generator', 'Sixth Sense Warning System', 'Condensed Neutron Rounds', 'Rapidfeed Adaptor', 'Mag-Cannon']},
 	'Olio Drone': {'id': 107, 'requires': ['Proton Mass Generator', 'Leech Laser']},
 	'Paladin Meka': {'id': 26, 'requires': ['Wartech Gatling Repeater', 'Hailfire Missile Launcher', 'Vertigo Energy Turret']},
@@ -222,7 +219,113 @@ const MECH = {
 	'Wolverine Meka': {'id': 15, 'requires': ['Venom Energy Turret', 'Aerodynamic Armor']},
 	'Wyvern Missile Platform': {'id': 104, 'requires': ['Cluster Missile Pod', 'Sabot Launcher', 'Energy-Web Missiles', 'Sanctuary Barrier Generator']},
 }
-
+const ID2MECH = {
+    0: 'Panther Light Tank',
+    1: 'Jaguar Medium Tank',
+    2: 'Behemoth Heavy Tank',
+    3: 'Striker Assault Vehicle',
+    4: 'Viper Hovertank',
+    5: 'Python Heavy Hovertank',
+    6: 'Puma Light Scout',
+    7: 'Hedgehog Utility Vehicle',
+    8: 'Ground-Hog Light Scout',
+    9: 'Lobber Assault Vehicle',
+    10: 'Lasher Assault Vehicle',
+    11: 'Tortoise Scout Vehicle',
+    12: 'Long-Rifle Meka',
+    13: 'Sentry Meka',
+    14: 'Super Nova Meka',
+    15: 'Wolverine Meka',
+    16: 'Killfox Meka',
+    17: 'Katana Meka',
+    18: 'Witman Meka',
+    19: 'Whirlwind Meka',
+    20: 'Sai Meka',
+    21: 'Gunslinger Meka',
+    22: 'Mini-gun Meka',
+    23: 'Takagi Meka',
+    24: 'Copperhead Hovertank',
+    25: 'Pitviper Hovertank',
+    26: 'Paladin Meka',
+    27: 'Battle Axe Meka',
+    28: 'Juggernaught Meka',
+    29: 'Ballista Meka',
+    30: 'Covert Meka',
+    31: 'Beast Meka',
+    32: 'Howitzer Meka',
+    33: 'Akimo Meka',
+    34: 'Tornado Meka',
+    35: 'Gladiator Meka',
+    36: 'Bowman Meka',
+    37: 'Hellbore Meka',
+    38: 'Grunt Meka',
+    39: 'Mercat Scout Tank',
+    40: 'Calico Utility Vehicle',
+    41: 'Coluber Utility Vehicle',
+    42: 'Tiger Attack Tank',
+    43: 'Cobra Attack Hovertank',
+    44: 'Ares Meka',
+    45: 'Pirata Meka',
+    46: 'Brightlance Meka',
+    47: 'Titan Meka',
+    48: 'Jabberwock Meka',
+    49: 'Hermes Meka',
+    50: 'Ferdelance Hovertank',
+    51: 'Wolfhound Meka',
+    52: 'Gatlinger Meka',
+    53: 'Lone-eye Probe',
+    54: 'Asp Assault Hovertank',
+    55: 'Mite Meka',
+    56: 'Death Whisper Artillery',
+    57: 'Howitzer Meka II',
+    58: 'Mammoth Combat Support Unit',
+    59: 'Sunburst Meka',
+    60: 'Lightfoot Meka',
+    61: 'Leopard Assault Tank',
+    62: 'Porcupine Assault Vehicle',
+    63: 'Bobcat Missile Tank',
+    64: 'Firestorm Meka',
+    65: 'Juggler Meka',
+    66: 'Cyclops Meka',
+    67: 'Claymore Meka',
+    68: 'Fiddler Salvager',
+    69: 'Spider Salvager',
+    70: 'Hermit Salvager',
+    71: 'Brawler Meka',
+    72: 'Battle Axe Meka II',
+    73: 'Prowler',
+    74: 'Hawkeye Spotter',
+    75: 'Dreadnaught Meka',
+    79: 'Battle Axe Meka X',
+    80: 'Spellbreaker Meka',
+    81: 'Nightstalker Meka',
+    82: 'Palestar Meka',
+    83: 'Necromancer Meka',
+    84: 'Snapper Ore Transporter',
+    85: 'Slider Ore Transporter',
+    86: 'Diamondback Ore Transporter',
+    87: 'Loggerhead Meka',
+    92: 'Shadow-eyes Probe',
+    93: 'Darkhunter Stealthtank',
+    94: 'Silentdeath Meka',
+    95: 'Shadow Assassin Meka',
+    96: 'Deep Sensor Meka',
+    97: 'Scout Sniper Meka',
+    98: 'Phase Guardian Meka',
+    99: 'Farseer Meka',
+    100: 'Dark Inquisitor Meka',
+    101: 'Static Jammer Meka',
+    102: 'Hiveminder Meka',
+    103: 'Scrapyard Meka',
+    104: 'Wyvern Missile Platform',
+    105: 'Dragoon Meka',
+    106: 'Aegis Shield Meka',
+    107: 'Olio Drone',
+    108: 'Deterus Drone',
+    109: 'Indirus Drone',
+    110: 'Savage Marauder Meka',
+    111: 'Battle Axe Meka III',
+}
 const MOD = {
 	'Advanced Mining Platform': {'id': 75, 'requires': ['Mining Surveyor Acti', 'Improved Mining Platform']},
 	'Advanced Optics Array': {'id': 65, 'requires': ['Compound Optics Array']},
@@ -369,7 +472,152 @@ const MOD = {
 	'Wraith Light Launcher': {'id': 88, 'requires': []},
 	'Zeus Missile System': {'id': 91, 'requires': ['Incursion Assault Launcher', 'Smart Warheads', 'Advanced Optics Array']},
 }
-
+const ID2MOD = {
+    0: 'Buckler Light Shield Generator',
+    1: 'Deathdealer Gatling Cannon',
+    2: 'Eagle-eye Targeting Computer',
+    3: 'Hellburn Overdrive',
+    4: 'Wartech Gatling Repeater',
+    5: 'Typhoon Supercharger',
+    6: 'Porcupine Reactive Armor',
+    7: 'Hailfire Missile Launcher',
+    8: 'Hellseeker Energy Turret',
+    9: 'Bit-Chipper Mining Drill',
+    10: 'Plasteel Armor',
+    11: 'Steelcore Armor',
+    12: 'Pro-max Armor',
+    13: 'Hightower Shield Generator',
+    14: 'Armadillo Reactive Armor',
+    15: 'Ballistic Ammo',
+    16: 'Missile Ammo',
+    17: 'Burster Heavy Turret',
+    18: 'Earlybird Warning System',
+    19: 'Death Lance',
+    20: 'Tri-gun',
+    21: 'Sixth Sense Warning System',
+    22: 'Evercell Capacitor',
+    23: 'Hyper-bat Capacitor',
+    24: 'Kite Medium Shield Generator',
+    25: 'Gemini Assault Turret',
+    26: 'Explosive Ammunition',
+    27: 'RoadRunner Turbine',
+    28: 'Sure-shot Targeting Computer',
+    29: 'Scatterfire Gatling Gun',
+    30: 'Onslaught Heavy Launcher',
+    31: 'Vertigo Energy Turret',
+    32: 'Venom Energy Turret',
+    33: 'Facenorth Gyro',
+    34: 'Sanctuary Dampening Shield',
+    35: 'Sonic Powerplant',
+    36: 'Hydra Powerplant',
+    37: 'Balanced Ammunition',
+    38: 'Explosive Missiles',
+    39: 'Steeltec Repair Droid',
+    40: 'Level-head Gyro',
+    41: 'Calypso Prism',
+    42: 'Evercell Recharger',
+    43: 'Masscap Recharger',
+    44: 'Hyper-bat Recharger',
+    45: 'Backflash Recharger',
+    46: 'Aerodynamic Armor',
+    47: 'Patchwork Armor',
+    48: 'Derringer Cannon',
+    49: 'High Tension Shocks',
+    50: 'Steeltec Repair Bot',
+    51: 'Maxwatt Transformer',
+    52: 'Hasty Construction',
+    53: 'Guided Warheads',
+    54: 'Smart Warheads',
+    55: 'Superior Grade Ammunition',
+    56: 'Condensed Neutron Rounds',
+    57: 'High Capacity Ammunition',
+    58: 'Armor Piercing Missiles',
+    59: 'High Capacity Missiles',
+    60: 'Distant Thunder Recharger',
+    61: 'Thunder Clap Recharger',
+    62: 'Kypris Prism',
+    63: 'Pallas Prism',
+    64: 'Compound Optics Array',
+    65: 'Advanced Optics Array',
+    66: 'Mark of the Commander',
+    67: 'Shield Boost Acti',
+    68: 'Shield Rush Acti',
+    69: 'Shield Restore Acti',
+    70: 'Basic Repair Nanites Acti',
+    71: 'Repair Nanites Acti',
+    72: 'Advanced Repair Nanites Acti',
+    73: 'Mobile Uplink',
+    74: 'Improved Mining Platform',
+    75: 'Advanced Mining Platform',
+    76: 'Improved Hydraulics Acti',
+    77: 'Powered Hydraulics Acti',
+    78: 'Mining Surveyor Acti',
+    79: 'Natural Armor Acti',
+    80: 'Holoprojector',
+    81: 'Holofield',
+    82: 'Targeting Laser',
+    83: 'Advanced Targeting Laser',
+    84: 'Shield Shunt',
+    85: 'Overload Capacitor',
+    86: 'Wartech Salvage Bot',
+    87: 'Wartech Salvage Droid',
+    88: 'Wraith Light Launcher',
+    89: 'Triad Missile Launcher',
+    90: 'Incursion Assault Launcher',
+    91: 'Zeus Missile System',
+    92: 'Rapidfeed Adaptor',
+    93: 'Carnivore Gatling Cannon',
+    94: 'Crusader Long-gun',
+    95: 'Reaper Assault Cannon',
+    96: 'Neptune Seige Cannon',
+    97: 'Gladius Energy Weapon',
+    98: 'Punisher Assault Turret',
+    99: 'Preserver Escape Pod',
+    105: 'Sabot Launcher',
+    106: 'Sabot Missiles',
+    108: 'EMP Adaptor',
+    109: 'EMP Cannon',
+    110: 'Leech Laser',
+    111: 'Mag-Cannon',
+    112: 'Sanctuary Adaptor',
+    113: 'Sanctuary Barrier Generator',
+    114: 'Vampire Cannon',
+    115: 'Rail Cannon',
+    116: 'Energy-Web Missiles',
+    121: 'Nightshade Cloaking Device',
+    122: 'Dark Shadow Cloak Generator',
+    123: 'Survivor Reinforced Cockpit',
+    124: 'Powerplant Restrictors',
+    125: 'Command Shield Adaptor',
+    126: 'Command Shield Generator',
+    127: 'Missile Defense System I',
+    128: 'Missile Defense System II',
+    129: 'Combat Analysis Module',
+    130: 'Energy Defense System I',
+    131: 'Energy Defense System II',
+    132: 'Combat Analysis System',
+    133: 'Ballistic Defense System I',
+    134: 'Ballistic Defense System II',
+    135: 'Plasma Adaptor',
+    136: 'Revealer Anti-Cloak',
+    137: 'Illuminator Anti-Cloak',
+    138: 'Deep View Module',
+    139: 'Sabot Ammunition',
+    140: 'Cerberus Shield System',
+    167: 'Obliteration Cannon',
+    168: 'Chimera Power Converter',
+    169: 'Argus Energy Adaptor',
+    170: 'Compressed Cobalt Plating',
+    171: 'Proton Mass Generator',
+    172: 'EMP Missiles',
+    173: 'EMP Ammunition',
+    174: 'Cluster Missiles',
+    175: 'Gyrojet Rounds',
+    176: 'Gyrojet Long-gun',
+    177: 'Cluster Missile Pod',
+    178: 'Tremor Sensors',
+    180: 'Shadow Whisperer',
+}
 const BUILDING = {
 	'Acti Recharger - Medium': {'id': 54, 'requires': ['Acti Recharger - Small']},
 	'Acti Recharger - Small': {'id': 53, 'requires': []},
@@ -432,7 +680,68 @@ const BUILDING = {
 	'Turret - Medium Laser': {'id': 11, 'requires': ['Turret - Basic Laser']},
 	'Turret - Medium Missile': {'id': 12, 'requires': ['Turret - Basic Missile']},
 }
-
+const ID2BLD = {
+    0: 'Powerplant - Small',
+    1: 'Powerplant - Medium',
+    2: 'Powerplant - Large',
+    3: 'Turret - Basic Ballistic',
+    4: 'Turret - Basic Laser',
+    5: 'Turret - Basic Missile',
+    6: 'Refinery - Small',
+    7: 'Refinery - Medium',
+    8: 'Refinery - Large',
+    9: 'Repair Bay - Small',
+    10: 'Turret - Medium Ballistic',
+    11: 'Turret - Medium Laser',
+    12: 'Turret - Medium Missile',
+    13: 'Repair Bay - Medium',
+    14: 'Turret - Heavy Ballistic',
+    15: 'Turret - Heavy Laser',
+    16: 'Turret - Heavy Missile',
+    17: 'Supply Dump',
+    18: 'Supply Depot',
+    19: 'Powerplant - Super',
+    20: 'Faction Headquarters',
+    26: 'Faction Flag',
+    27: 'Light Thumper',
+    28: 'Medium Thumper',
+    29: 'Heavy Thumper',
+    30: 'Observation Post',
+    31: 'Tracking Station',
+    32: 'Fusion Generator',
+    33: 'Fusion Plant',
+    34: 'Fusion Reactor',
+    35: 'Shield Recharger',
+    36: 'Command Tower',
+    37: 'Resupply Compound',
+    38: 'EMP Generator',
+    43: 'Ore Processor - Small',
+    44: 'Ore Processor - Medium',
+    45: 'Ore Processor - Large',
+    46: 'Gravity Dynamo',
+    47: 'Gravity Generator',
+    48: 'Turret - Hybrid Laser',
+    49: 'Turret - Hybrid Ballistic',
+    50: 'Light Phase Shield Generator',
+    51: 'Medium Phase Shield Generator',
+    52: 'Heavy Phase Shield Generator',
+    53: 'Acti Recharger - Small',
+    54: 'Acti Recharger - Medium',
+    55: 'Sensor Array - Small',
+    56: 'Sensor Array - Medium',
+    57: 'Sensor Array - Large',
+    58: 'Ballistic Ammo Refitter',
+    59: 'Missile Ammo Refitter',
+    60: 'Ballistic Damage Enhancer',
+    61: 'Energy Damage Enhancer',
+    62: 'Missile Damage Enhancer',
+    63: 'Point Defense System',
+    64: 'Shield Generator Small',
+    65: 'Shield Generator Medium',
+    66: 'Shield Generator Large',
+    67: 'Dropship Pad',
+    68: 'Shield Generator Improved',
+}
 const PRIORITY = [
     "Aerodynamic Armor",
     "Armadillo Reactive Armor",
@@ -639,71 +948,463 @@ const PRIORITY = [
     "Obliteration Cannon",
     "Rail Cannon",
 ]
+
+/*============================================== Utility ==============================================*/
+function lsget(varname, def){
+    let rv = localStorage.getItem(varname)
+    if (rv == undefined){
+        localStorage.setItem(varname, JSON.stringify(def))
+        return def
+    }
+    else{
+        return JSON.parse(rv)
+    }
+}
+
+function lsput(varname, obj){
+    localStorage.setItem(varname, JSON.stringify(obj))
+}
+
+function match(obj1, obj2){
+    for (const [k, value] of Object.entries(obj2)) {
+        if (value != obj1[k]){
+            return false
+        }
+    }
+    return true
+}
+
+function formatParams( params ){
+    return "?" + Object
+        .keys(params)
+        .map(function(key){
+        return key+"="+encodeURIComponent(params[key])
+    })
+        .join("&")
+}
+
+function getBarPosition(barid){
+	for (let i=0; i<buildslots; i++) {
+        if (nowbuilding_ConId[i] == barid){
+            return i
+        }
+    }
+    alert('Critical error, barid not found. Please report to XHunter (ID=1)')
+    return 0
+}
+
+function checkBarsEmpty(){
+    if (ongoing)
+        return false
+    for (let i=0; i<buildslots; i++) {
+        if (nowbuilding_ConId[i] != 'empty'){
+            return false
+        }
+    }
+    return true
+}
+
+async function waitForBars(){
+    let promise = new Promise((resolve)=>{
+        let check = ()=>{
+            if (checkBarsEmpty())
+                resolve()
+            else
+                setTimeout(check, RETRY_DELAY)
+        }
+        check()
+    })
+    await promise
+}
+
+/*============================================== XMLHTTP ==============================================*/
+var ongoing = 0
+function sendBuildRequest(params, callback=userCallback){
+    let xmlhttp = new XMLHttpRequest()
+    xmlhttp.open("GET", `process_build_start.php${formatParams(params)}`, true)
+    xmlhttp.onreadystatechange = function() {
+        if (this.readyState == 4) ongoing -= 1
+        if ( (this.readyState === 4) && (this.status === 200) ) {
+            if (/startcon\((\d+),(\d+),('\w+')\)/.test(this.responseText)){
+                let matches = this.responseText.match(/startcon\((\d+)/)
+                let barid = parseInt(matches[1])
+                startcon(barid, params.unit, params.type)
+                callback(params, true, barid)
+            }
+            else {
+                callback(params, false, NaN)
+            }
+        }
+    }
+    try{
+        xmlhttp.send()
+        ongoing += 1
+    }
+    catch(err){
+        setTimeout(()=>{sendBuildRequest(params, callback)}, 1000)
+    }
+}
+
+function autoCallbackWrapper(params, success, barid, delay=CONFIRM_DELAY){
+    if (success)
+        autoRegisterStart(params, barid)
+    autoCallback(params, success, barid, delay=CONFIRM_DELAY)
+}
+
+function autoCallback(params, success, barid, delay=CONFIRM_DELAY){
+    if (success){
+        setTimeout(()=>{
+            let xmlhttp = new XMLHttpRequest()
+            let confirmParams = {
+                id: barid
+            }
+            xmlhttp.open("GET", `process_build_commit.php${formatParams(confirmParams)}`, true)
+            xmlhttp.onreadystatechange = function() {
+                if ( (this.readyState === 4) && (this.status === 200) ) {
+                    if (/finishedbuildstatus/.test(this.responseText)){
+                        // Normal expectation
+                        let barpos = getBarPosition(barid)
+                        clearcon(barpos)
+                        autoRegisterComplete(barid)
+                    }
+                    else if(/buildfailed/.test(this.responseText)){
+                        // Happens when the user run out of resources
+                        alert('Err - Please check that you have enough ores or commands. Otherwise report bug to XHunter (ID=2)')
+                        autoRegisterFailed(barid)
+                    }
+                    else{
+                        // Multiple scenarios here - premod "gone" or user did multi-session - or we tried to confirm too early
+                        // Assume the last.
+                        autoCallback(params, success, barid, RETRY_DELAY)
+                    }
+                }
+            }
+            try{
+                xmlhttp.send()
+            }
+            catch(err){
+                alert(err)
+                setTimeout(()=>{autoCallback(params, success, barid, delay)}, 1000)
+            }
+        }, delay)
+    }
+    else {
+        // Auto action. Must be no resource or bug.
+        alert('Err - Please check that you have enough ores or commands. Otherwise report bug to XHunter (ID=3)')
+        disableAuto()
+    }
+}
+
+function userCallback(params, success, barid, delay=CONFIRM_DELAY){
+    if (success){
+        setTimeout(()=>{
+            let xmlhttp = new XMLHttpRequest()
+            let confirmParams = {
+                id: barid
+            }
+            xmlhttp.open("GET", `process_build_commit.php${formatParams(confirmParams)}`, true)
+            xmlhttp.onreadystatechange = function() {
+                if ( (this.readyState === 4) && (this.status === 200) ) {
+                    if (/finishedbuildstatus/.test(this.responseText)){
+                        // Normal expectation
+                        let barpos = getBarPosition(barid)
+                        clearcon(barpos)
+                    }
+                    else if(/buildfailed/.test(this.responseText)){
+                        // Happens when the user run out of resources
+                        alert('Err - Please check that you have enough ores or commands. Otherwise report bug to XHunter (ID=4)')
+                    }
+                    else{
+                        // Multiple scenarios here - premod "gone" or user did multi-session - or we tried to confirm too early
+                        // Assume the last.
+                        userCallback(params, success, barid, RETRY_DELAY)
+                    }
+                }
+            }
+            try{
+                xmlhttp.send()
+            }
+            catch(err){
+                setTimeout(()=>{userCallback(params, success, barid, delay)}, 1000)
+            }
+        }, delay)
+    }
+    else {
+        // User action. This is either no ore, command or slots.
+    }
+}
+
+function cluelessComplete(barid, delay=CONFIRM_DELAY){
+    setTimeout(()=>{
+        let xmlhttp = new XMLHttpRequest()
+        let confirmParams = {
+            id: barid
+        }
+        xmlhttp.open("GET", `process_build_commit.php${formatParams(confirmParams)}`, true)
+        xmlhttp.onreadystatechange = function() {
+            if ( (this.readyState === 4) && (this.status === 200) ) {
+                if (/finishedbuildstatus/.test(this.responseText)){
+                    // Normal expectation
+                    let barpos = getBarPosition(barid)
+                    clearcon(barpos)
+                    autoRegisterComplete(barid, false)
+                }
+                else if(/buildfailed/.test(this.responseText)){
+                    alert('Err - Please check that you have enough ores or commands. Otherwise report bug to XHunter (ID=2)')
+                    autoRegisterFailed(barid, false)
+                }
+                else{
+                    cluelessComplete(barid, RETRY_DELAY)
+                }
+            }
+        }
+        try{
+            xmlhttp.send()
+        }
+        catch(err){
+            setTimeout(()=>{autoCallback(params, success, barid, delay)}, 1000)
+        }
+    }, delay)
+}
+
+/*============================================== Rewrites ==============================================*/
+confirm = function() {
+    if (auto == false){
+        layerWrite('buildtext1DIV','')
+        orderpending = 1
+        sendBuildRequest({
+            unit: buildchoice,
+            type: buildtype,
+            sendvars: varAmountsText != undefined ? varAmountsText.join(',') : '',
+            commandused: commandused,
+            cancel: 0
+        })
+    }
+}
+
+confirmRecent = function(myIndex) {
+    if (auto == false){
+        sendBuildRequest({
+            unit: recentId[myIndex],
+            type: recentType[myIndex],
+            sendvars: recentVars[myIndex],
+            commandused: recentCommand[myIndex],
+            cancel: 0
+        })
+    }
+}
+
+buildFromReq = function(myType,myId){
+    if (auto == false){
+        sendBuildRequest({
+            unit: myId,
+            type: myType,
+            commandused: 0,
+            cancel: 0
+        })
+    }
+}
+
+selectunit = function(myunit, mytype) {
+    if (expressBuild=="N") {
+        layerWrite("selecttext1DIV", "<b><a href='javascript:showselect();' onfocus='this.blur();'>Select Item to Build</a></b>", "container1DIV.document.confirm1DIV")
+
+        if (mytype=="unit") {buildchoice=unitid[myunit]}
+        if (mytype=="mod") {buildchoice=modid[myunit]}
+        if (mytype=="building") {buildchoice=buildingid[myunit]}
+
+        varAmountsText = Array();
+        buildtype = mytype;
+        resizeit()
+
+        mytext="<table cellpadding=0 cellspacing=0 border=0 width='100%' height='70%'><tr><td bgcolor='#01436f'>"
+        mytext+="<table cellpadding=1 cellspacing=1 border=0 width='100%' height='100%'><tr>"
+
+        if (mytype=="unit") {
+            mytext+="<td bgcolor='#000000' class='helptext' width='150'><DIV STYLE='width:150; height:150;'><img src='" + imgPath + "3d_full/r_"+unittype[myunit]+".gif' border=0></DIV></td>"
+            show('usecommandbar1DIV');
+        }
+        else if (mytype=="building") {
+            mytext+="<td bgcolor='#000000' class='helptext' width='150'><DIV STYLE='width:150; height:150;'><img src='" + imgPath + "3d_full/"+buildingtype[myunit]+".gif' border=0></DIV></td>"
+        }
+        else if (mytype=="mod") {
+            //	mytext+="<td bgcolor='#000000' class='helptext' width='20%'><center><img src=" + imgPath + "mods/"+modimglrg[myunit]+" border=0></DIV><br><b>"+modname[myunit]+"</b></center></td>"
+        }
+
+        mytext+="<td bgcolor='#000000'><iframe frameborder='no' width='100%' height='100%' scrolling='auto' src='construct_unit_info.php?unit="+buildchoice+"&type="+mytype+"'></iframe></td>"
+        mytext+="</tr></table></td></tr></table>"
+        mytext+="<table cellpadding=1 cellspacing=0 border=0 width='100%' height='73'>"
+        mytext+="<tr><td bgcolor='#000000' align=center id='reqFrame'>"
+        mytext+="<iframe name='req' id='req' frameborder='no' width='100%' height='73' scrolling='no' src='construct_unit_req.php?unit="+buildchoice+"&type="+mytype+"&nowbuilding="+nowbuilding+"&oversight="+commandused+"'></iframe>"
+        mytext+="</td></tr></table>"
+
+        layerWrite("buildunitbar1DIV", mytext, "container1DIV.document.buildunitbar1")
+
+        show('buildunitbar1DIV');
+        hide('selectunitbar1DIV');
+    } else {
+        if (mytype=="unit") {buildchoice=unitid[myunit]}
+        if (mytype=="mod") {buildchoice=modid[myunit]}
+        if (mytype=="building") {buildchoice=buildingid[myunit]}
+
+        buildtype = mytype;
+        confirm();
+    }
+}
+
+startcon = function(barid, myunitid, mytype){
+    mybar = "empty"
+    for (var i=0;i<buildslots;i++) { if (nowbuilding_ConId[i] == "empty") {mybar = i; break;} }
+
+    if (mybar != "empty") {
+        nowbuilding_ConId[mybar] = barid
+        myname = findname(myunitid, mytype)
+        layerWrite("progressbar" + mybar + "textDIV", myname, "container1DIV.document.confirm1DIV")
+
+        progress(1,mybar)
+        // playpop(mybar)
+        setRecent(myunitid, mytype, commandused, varAmountsText)
+    }
+}
+
+processComplete = function(mybar){
+    layerWrite("progressbar" + mybar + "popDIV", "...", "container1DIV.document.confirm1DIV")
+}
+
 /*============================================== Parser ==============================================*/
+var ONE_CLICK = lsget('buildscript_oneclick', false)
 function parseBuildQuery(query){
     try{
         var order = JSON.parse(query)
-        var remainingItems = {}
-        var buildList = {}
-
-        //Parse the query
-        for (var item in order){
-            var itemList = getBuildList([item, order[item]])
-            buildList = aggregate(buildList, itemList)
-        }
-
-        //Parse and aggregate old items to new items
-        var convertedRemainingItems = JSON.parse(localStorage.getItem('buildList'))
-        if (convertedRemainingItems == null)
-            convertedRemainingItems = []
-        for (item of convertedRemainingItems){
-            remainingItems[item[0]] = item[1]
-        }
-        buildList = aggregate(buildList, remainingItems)
-
-        var convertedBuildList = []
-        for (item of PRIORITY){
-            if (item in buildList)
-                convertedBuildList.push([item, buildList[item]])
-        }
-        localStorage.setItem('buildList', JSON.stringify(convertedBuildList))
     }
-    catch(err){console.log(err)}
+    catch(err){
+        alert('ERR: Bad query')
+        return
+    }
+    var remainingItems = {}
+    var buildList = {}
+
+    //Parse the query
+    for (let item of order){
+        var itemList = expandItem(item)
+        buildList = aggregate(buildList, itemList)
+    }
+
+    //Parse and aggregate old items to new items
+    var convertedCurrent = {}
+
+    for (let item of currentQuery){
+        let name
+        if (item.type == 'unit'){
+            name = ID2MECH[item.unit]
+            if (name in convertedCurrent){
+                convertedCurrent[name].push(item)
+            }
+            else{
+                convertedCurrent[name] = [item]
+            }
+        }
+        else if (item.type == 'mod'){
+            name = ID2MOD[item.unit]
+            convertedCurrent[name] = item
+        }
+        else{
+            name = ID2BLD[item.unit]
+            convertedCurrent[name] = item
+        }
+    }
+    buildList = aggregate(buildList, convertedCurrent)
+
+    let newList = []
+    for (let item of PRIORITY){
+        if (item in buildList)
+            newList.push(buildList[item])
+    }
+    if (ONE_CLICK)
+        newList.reverse()
+
+    for (let item in MECH){
+        if (item in buildList)
+            newList.push(...buildList[item])
+    }
+    currentQuery = newList
+    lsput('buildscript_list', currentQuery)
 }
 
 /*
 input: [mod_name/mech, quantity]
 output: {mod_1_name: quantity, ...}
 */
-function getBuildList(order){
+function expandItem(item){
     var buildList = {}
     var children = null
 
-    if (order[0] in ACRONYMS)
-        order[0] = ACRONYMS[order[0]]
-    if (order[0] in MOD){
-        buildList[order[0]] = order[1]
-        children = MOD[order[0]]
+    if (typeof item[1] != 'number'){
+        alert(`Err - Unknown request ${item}, skipping`)
+        return {}
     }
-    else if (order[0] in MECH){
-        children = MECH[order[0]]
+    let iname
+    if (item[0] in ACRONYMS)
+        iname = ACRONYMS[item[0]]
+    else
+        iname = item[0]
+
+
+    if (iname in MOD){
+        buildList[iname] = {
+            unit: MOD[iname].id,
+            type: 'mod',
+            count: item[1],
+        }
+        children = MOD[iname].requires
     }
-    else if (order[0] in BUILDING){
-        buildList[order[0]] = order[1]
-        children = BUILDING[order[0]]
+    else if (iname in MECH){
+        children = MECH[iname].requires
+        // Unknown var
+        if (typeof item[3] != 'number' || /^[ADEMRS]*$/.test(item[2]) == false){
+            alert(`Err - Unknown request ${item}, skipping`)
+            return {}
+        }
+        else if ( children.length < item[2].length ){
+            alert(`Err - Too many var select for ${iname}: ${item[2]} - max is ${children.length}, skipping`)
+            return {}
+        }
+        let sendvar = []
+        for (let i = 0; i < item[2].length; i++){
+            sendvar.push(`${item[2][i]}o${MOD[children[i]].id}`)
+        }
+        buildList[iname] = [{
+            unit: MECH[iname].id,
+            type: 'unit',
+            sendvars: sendvar.join(','),
+            commandused: item[3],
+            count: item[1],
+        }]
+    }
+    else if (iname in BUILDING){
+        buildList[iname] = {
+            unit: BUILDING[iname].id,
+            type: 'building',
+            count: item[1],
+        }
+        children = BUILDING[iname].requires
+    }
+    else if (iname in BUILDING){
+        children = BUILDING[iname].requires
     }
     else{
+        alert(`Err - Unknown request ${item}, skipping`)
+        return {}
     }
 
     if (children == null){
         return buildList
     }
+
     else {
-        if (order[0] in MECH || ONE_CLICK == false){
-            for (var child of children["requires"]){
-                //Get child list
-                var childList = getBuildList([child, order[1]])
-                //Append
+        if (iname in MECH || ONE_CLICK == false){
+            for (var child of children){
+                var childList = expandItem([child, item[1]])
                 buildList = aggregate(buildList, childList)
             }
         }
@@ -713,218 +1414,218 @@ function getBuildList(order){
 
 function aggregate(target, content){
     for (var item in content){
-        if (target[item] == null)
+        if (item in target){
+            if (Array.isArray(content[item])){
+                // Mechs
+                for (let mech of content[item])
+                    target[item].push(mech) // This works too and I can't be assed to check, match and add...
+            }
+            else{
+                target[item].count += content[item].count
+            }
+        }
+        else{
             target[item] = content[item]
-        else
-            target[item] += content[item]
+        }
     }
     return target
 }
 
 /*============================================== Automation ==============================================*/
-var auto = false
-var requestAuto = false
-var buildLock = 0
-var newRequest = null
+// Disable user inputs
+var auto = true
+// Alarms the script of user intents
+var autoRequest = false
+var currentQuery = lsget('buildscript_list',[])
+var activeQuery = lsget('buildscript_active',[])
 
-class BuildQueue {
-    constructor() {
-        this.queue = []
+// Test data:
+// var activeQuery = [
+//     {
+//         params:{
+//             unit: 53,
+//             type: 'unit',
+//             sendvars: 'Ao0',
+//             commandused: 20,
+//             cancel: 0
+//         }
+//     },
+//     {
+//         params:{
+//             unit: 98,
+//             type: 'mod',
+//             commandused: 100,
+//             cancel: 0
+//         }
+//     }
+// ]
+
+// var currentQuery = [
+//     {
+//         unit: 53,
+//         type: 'unit',
+//         sendvars: 'Ao0',
+//         commandused: 20,
+//         count: 4
+//     },
+//     {
+//         unit: 98,
+//         type: 'mod',
+//         count: 4
+//     }
+// ]
+
+function autoStart(){
+    auto = true
+    autoRequest = true
+    waitForBars()
+    setTimeout(()=>{
+        if (activeQuery.length > 0)
+            autoBuildActives()
+        else
+            autoBatchNewActives()
+    },0)
+}
+
+function autoStop(){
+    autoRequest = false
+    waitForBars()
+    auto = false
+}
+
+function autoBootstrap(){
+    for (let i=0; i<buildslots; i++) {
+        if (nowbuilding_ConId[i] != 'empty'){
+            cluelessComplete(nowbuilding_ConId[i])
+        }
     }
+    // Finished processing untracked constructions
+    auto = autoRequest
+}
 
-    _append(buildchoice, buildtype){
-        this.queue.push([buildchoice, buildtype])
-    }
+// Calls upon page load
+setTimeout(autoBootstrap, 1500)
 
-    parseRequest(){
-        this.queue = [] //Wipe the queue
-        var remainingItems = JSON.parse(localStorage.getItem('buildList'))
-        if (remainingItems == null)
+function autoBatchNewActives(){
+    if (autoRequest){
+        waitForBars()
+        if (currentQuery.length == 0){
+            disableAuto()
             return
-
-        for (var item of remainingItems){
-            var matches = $(`a:contains(${item[0]})`)
-            matches = matches.filter(function () {
-                return $(this).text().trim() == item[0]
-            });
-
-            var href = matches.first().attr('href')
-            var id = parseInt(href.match(/\d/g).join(""))
-            var type = href.split('"')[1]
-
-            if (type == "unit") {id = unitid[id]}
-            if (type == "mod") {id = modid[id]}
-            if (type == "building") {id = buildingid[id]}
-
-            for (var i = 0; i < item[1]; i++){
-                this._append(id, type)
-            }
         }
-    }
-
-    process(){
-        //We try and process only if we're in automode and the user didn't request to pause auto, and the user isn't adding new items
-        if (auto && requestAuto && newRequest == null){
-            if (this.queue.length > 0 && buildLock == 0){
-                buildLock = buildslots
-                var firstMod = this.queue[0][0]
-                for (var i = 0; i < buildslots; i++){
-                    if (this.queue.length == 0 || this.queue[0][0] != firstMod){
-                        buildLock--
-                        continue
-                    }
-                    var item = this.queue.shift()
-                    $.get('process_build_start.php', {unit: item[0], type: item[1], sendvars:'', commandused: 0, cancel: 0}, function( data ) {
-                        if (data.includes('startcon')){
-                            var variables = data.split('startcon(')[1].split(')')[0].split(',')
-                            var barid = parseInt(variables[0])
-                            var myunitid = parseInt(variables[1])
-                            var mytype = variables[2].split("'")[1]
-                            startcon(barid, myunitid, mytype)
-                        }
-                        else
-                            console.log('Error: Server reported build requirements not met!')
-                    });
-                }
-                return true
-            }
+        if (activeQuery.length){
+            alert('Err - Queuing units before finishing existing batch. Please report to XHunter (ID=8)')
+            return
         }
-        return false
-    }
-
-    clear(){
-        this.queue = []
-    }
-
-    finished(){
-        return this.queue.length == 0 && buildLock == 0
-    }
-}
-var buildQueue = new BuildQueue()
-$(this).ready(function(){
-    buildQueue.parseRequest()
-})
-
-//Listener for items being built. Used to verify stuff
-function itemBuilt(mod){
-    if (auto){
-        var remainingItems = JSON.parse(localStorage.getItem('buildList'))
-
-        var found = false
-        for (var i = 0; i < remainingItems.length; i++){
-            if (remainingItems[i][0] == mod){
-                if (remainingItems[i][1] == 1) {
-                    remainingItems.splice(i, 1)
-                }
-                else {
-                    remainingItems[i][1]--
-                }
-
-                found = true
-                break
+        for (let i = 0; i < Math.min(buildslots, currentQuery[0].count); i++){
+            let newItem = {}
+            let itemParams = {
+                unit: currentQuery[0].unit,
+                type: currentQuery[0].type,
+                commandused: 100,
+                cancel: 0
             }
+            if (currentQuery[0].type == 'unit'){
+                itemParams.sendvars = currentQuery[0].sendvars
+                itemParams.commandused = currentQuery[0].commandused
+            }
+            newItem.params = itemParams
+            activeQuery.push(newItem)
         }
-        if (found)
-            localStorage.setItem('buildList', JSON.stringify(remainingItems))
-        else
-            console.log(`Item built not in list: ${mod}`)
+        if (currentQuery[0].count <= buildslots){
+            currentQuery.shift()
+        }
+        else{
+            currentQuery[0].count -= buildslots
+        }
+
+        lsput('buildscript_list', currentQuery)
+        lsput('buildscript_active', activeQuery)
+        autoBuildActives()
     }
 }
 
-/*============================================== Reroute between programmic call and normal call ==============================================*/
-function processcomplete_2(mybar) {
-    if (nowbuilding_ConId[mybar] == 'empty'){
-        console.log('Critical error, ConId not found')
+function autoBuildActives(){
+    if (autoRequest){
+        for (let item of activeQuery){
+            if (item.barid != undefined){
+                alert('Err - Orphaned item detected. Did you run multiple sessions or refreshed mid-confirm? Please report to XHunter (ID=9)')
+                continue
+            }
+            sendBuildRequest(item.params, autoCallbackWrapper)
+        }
+    }
+    else{
+        alert('Err - Script attempted to run while disabled. Please report to XHunter (ID=7)')
+    }
+}
+
+function autoRegisterStart(params, barid){
+    for (let item of activeQuery){
+        if (match(item.params, params)){
+            if (item.barid == undefined){
+                item.barid = barid
+                lsput('buildscript_active', activeQuery)
+                return
+            }
+        }
+    }
+    alert('Err - Auto registered foul item. Please report to XHunter (ID=5)')
+}
+
+function autoRegisterComplete(barid, reportNotFound=true){
+    for (let item of activeQuery){
+        if (item.barid == barid){
+            activeQuery.splice(activeQuery.indexOf(item), 1)
+            lsput('buildscript_active', activeQuery)
+            if (activeQuery.length == 0)
+                autoBatchNewActives()
+            return
+        }
+    }
+    if (reportNotFound)
+        alert('Err - Auto item built not in checklist. Please report to XHunter (ID=6)')
+}
+
+function autoRegisterFailed(barid, reportNotFound=true){
+    for (let item of activeQuery){
+        if (item.barid == barid){
+            item.barid = undefined
+            disableAuto()
+            lsput('buildscript_active', activeQuery)
+            return
+        }
+    }
+    if (reportNotFound)
+        alert('Err - Auto registered foul item. Please report to XHunter (ID=10)')
+}
+/*============================================== GUI ==============================================*/
+function toggleAuto(){
+    // Toggle = Inversed
+    if (autoRequest){
+        disableAuto()
+    }
+    else{
+        enableAuto()
+    }
+}
+
+function disableAuto(){
+    if (!autoRequest)
         return
-    }
-
-    var item = $(`#progressbar${mybar}textDIV`).text().trim()
-    $.get('process_build_commit.php', {id: nowbuilding_ConId[mybar], mybar: mybar})
-    itemBuilt(item)
-    clearcon(mybar)
-
-    setTimeout(function(){
-        if (auto)
-            buildLock--
-    }, 10)
+    autoBtn.text('...')
+    autoStop()
+    autoBtn.text('Start Auto')
 }
 
-function clearcon_2(mybar) {
-    eval("progressbar" + mybar + ".clip(0, 0, 19, 0)")
-    nowbuilding_ConId[mybar] = "empty"
-    layerWrite("progressbar" + mybar + "popDIV", "", "container1DIV.document.confirm1DIV")
-    layerWrite("progressbar" + mybar + "textDIV", "", "container1DIV.document.confirm1DIV")
-    mybar = eval("progressbar" + mybar + "pop")
-    mybar.style.left = 420
+function enableAuto(){
+    if (autoRequest)
+        return
+    autoBtn.text('...')
+    autoStart()
+    autoBtn.text('Stop Auto')
 }
 
-function confirm() {
-    $.get('process_build_start.php', {unit: buildchoice, type: buildtype, sendvars:'', commandused: commandused, cancel: 0}, function( data ) {
-        if (data.includes('startcon')){
-            var variables = data.split('startcon(')[1].split(')')[0].split(',')
-            var barid = parseInt(variables[0])
-            var myunitid = parseInt(variables[1])
-            var mytype = variables[2].split("'")[1]
-            startcon(barid, myunitid, mytype)
-        }
-        else
-            console.log('Error: Server denied request!')
-    });
-}
-
-function progress_2(myprogress,mybar) {
-    if (canceled[mybar] != 1) {
-        eval("progressbar" + mybar + ".clip(0, 470, 19, 0)")
-        setpop(mybar,'end')
-    } else {
-        clearcon(mybar)
-        setTimeout("canceled[" + mybar + "]=0", 600)
-    }
-}
-
-function playpop_2(barid){
-    mybar = eval("progressbar" + barid + "pop")
-    mybar.style.left = 481
-
-}
-
-function startcon_2(barid, myunitid, mytype){
-    mybar = "empty"
-    for (var i=0;i<buildslots;i++) { if (nowbuilding_ConId[i] == "empty") {mybar = i; break;} }
-
-    if (mybar != "empty") {
-        nowbuilding_ConId[mybar] = barid
-        myname = findname(myunitid, mytype);
-        layerWrite("progressbar" + mybar + "textDIV", myname, "container1DIV.document.confirm1DIV")
-
-        progress(0,mybar)
-        playpop(mybar)
-        setRecent(myunitid, mytype, commandused, varAmountsText)
-
-        if (buildchoice != -1) { myId = findId(buildchoice, buildtype); selectunit(myId, buildtype) }
-    }
-}
-
-$(this).ready(function(){
-    processcomplete = processcomplete_2
-    clearcon = clearcon_2
-    progress = progress_2
-    playpop = playpop_2
-    startcon = startcon_2
-    finishedbuildstatus = function(){}
-})
-
-// One-click, use with caution (fundamentally buggy)
-var ONE_CLICK = (()=>{
-    let oc = localStorage.getItem('one_click')
-    if (oc == undefined){
-        localStorage.setItem('one_click', false)
-        return false
-    }
-    return JSON.parse(oc)
-})()
-
-/*============================================== GUI stuff ==============================================*/
 /* Toggle Button */
 var toggleBtn = $($.parseHTML('<button id="toggle_con_mode" type="button" style="display: block; width: 110px; position: absolute;top: -20px;left: 20px;">Toggle</button>'))
 var autoBtn = $($.parseHTML('<button id="toggle_auto_mode" type="button" style="display: block; width: 110px; position: absolute;top: -40px;left: 20px;">Manual</button>'))
@@ -937,25 +1638,28 @@ toggleBtn.click(function(){
     $('input[name="excon"]', iframe.contents()).click()
     $('.buttontext', iframe.contents()).click()
 })
-autoBtn.click(function(){
-    requestAuto = !requestAuto
-    $(this).text('...')
-})
+
+autoBtn.click(toggleAuto)
+
 queryBtn.click(function(){
-    newRequest = prompt("Build Query?", "{}")
+    let newRequest = prompt("Build Query?", '[["unit", qty, "vars", OS],["mod_or_bld", qty]]')
     if (newRequest != null)
-        requestAuto = AUTO_BUILD_ON_QUEUE ? true : requestAuto
+        parseBuildQuery(newRequest)
+
+    if (AUTO_BUILD_ON_QUEUE){
+        enableAuto()
+    }
 })
 
 clearBtn.click(function(){
-    localStorage.setItem('buildList', JSON.stringify([]))
-    buildQueue.clear()
+    currentQuery = []
+    lsput('buildscript_list', currentQuery)
 })
 
 ocToggleBtn.click(function(){
     ONE_CLICK = !ONE_CLICK
     $(this).text(ONE_CLICK?'One-click mode':'Classic mode')
-    localStorage.setItem('one_click', ONE_CLICK)
+    lsput('buildscript_oneclick', ONE_CLICK)
 })
 
 var loaded = false
@@ -971,63 +1675,7 @@ iframe.on('load', function(){
         loaded = true
     }
 })
+
 $(this).ready(function(){
     $('body').append(iframe)
 })
-
-/*============================================== Master loop ==============================================*/
-
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-var confirmLock = false
-$(this).ready(function(){
-    //wait for frizz stuff to finish running
-    setTimeout(function(){
-        setInterval(async function(){
-            if (confirmLock)
-                return
-            if (buildQueue.process()){
-                confirmLock = true
-                await sleep(400)
-            }
-            //Automatically confirm
-            var confirms = $("div[id*='popDIV']:contains(Confirm)").children('a')
-            confirmLock = true
-            await sleep(CONFIRM_DELAY)
-            for (var i = 0; i < confirms.length; i++){
-                await sleep(50)
-                confirms[i].click()
-            }
-            confirmLock = false
-
-            //await sleep(500)
-            // Check if anything is being built
-            var building = false
-            for (i = 0; i < buildslots; i++){
-                if (nowbuilding_ConId[i] != 'empty')
-                    building = true
-            }
-
-            // All state changes are done when building is off
-            if (building == false){
-                // Handle any new build request
-                if (newRequest != null){
-                    parseBuildQuery(newRequest)
-                    buildQueue.parseRequest()
-                    newRequest = null
-                }
-                // If finished building, request auto off
-                if (buildQueue.finished()){
-                    requestAuto = false
-                }
-
-                // If we aren't building anything, sync auto mode
-                auto = requestAuto
-                $('#toggle_auto_mode').text(auto ? 'Auto' : 'Manual')
-            }
-        }, 50)
-    }, 500)
-})
-
