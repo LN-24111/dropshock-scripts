@@ -38,7 +38,7 @@ Query format:
 Common acronyms for common units are included.
 
 Example:
-[["Wyvern", 40, "ADMM", 100]]
+[["Kat", 40, "ADMM", 100]]
 
 OUTDATED:
 Example gif (query: {"Kat": 8} ):
