@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DS - Better Storage
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.3
 // @description  try to take over the world!
 // @author       XHunter
 // @updateURL    https://raw.githubusercontent.com/LN-24111/dropshock-scripts/main/better_storage/better_storage.meta.js
@@ -153,7 +153,7 @@ function expandAll(){
 function clickDitUnits(){
     let units = $('font:contains(Mod Slot)').prev()
     for (let unit of units){
-        if(unit.textContent.length == 0){
+        if(unit.textContent.length < 3){
             var cb = $(unit).parent().parent().parent().parent().parent().parent().parent().find('input.twCB[type=checkbox]')
             if (CBshown && cb.length == 1){
                 if(cb[0].checked == false)
@@ -164,10 +164,10 @@ function clickDitUnits(){
 }
 
 document.addEventListener('keyup', (event)=>{
-    if (event.code == 'Digit1'){
+    if (event.code == 'KeyE'){
         expandAll()
     }
-    if (event.code == 'Digit2'){
+    if (event.code == 'KeyX'){
         clickDitUnits()
     }
 })
